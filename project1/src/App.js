@@ -1,6 +1,7 @@
-import { request } from "./src/network/api.js";
-import UserList from "./src/components/UserList.js";
-import TodoList from "./src/components/TodoList.js";
+import { request } from "./network/api.js";
+import UserList from "./components/UserList.js";
+import TodoList from "./components/TodoList.js";
+import Header from "./components/Header.js";
 
 export default function App({ $target }) {
   const $userListContainer = document.createElement("div");
@@ -29,21 +30,64 @@ export default function App({ $target }) {
     },
   });
 
+  const header = new Header({
+    $target: $todoListContainer,
+    initialState: {
+      isLoading: this.state.isLoading,
+      selectedUsername: this.state.selectedUsername,
+    },
+  });
+
   const todoList = new TodoList({
     $target: $todoListContainer,
     initialState: {
       todos: this.state.todos,
       isLoading: this.state.isLoading,
     },
+    onToggle: async (id) => {
+      const todoIndex = this.state.todos.findIndex((todo) => todo._id === id);
+      const nextTodos = [...this.state.todos];
+
+      nextTodos[todoIndex].isCompleted = !nextTodos[todoIndex].isCompleted;
+      this.setState({
+        ...this.state,
+        todos: nextTodos,
+      });
+
+      await request(`/${this.state.selectedUsername}/${id}/toggle`, {
+        method: "PUT",
+      });
+      await fetchTodos();
+    },
+    onRemove: async (id) => {
+      const todoIndex = this.state.todos.findIndex((todo) => todo._id === id);
+
+      const nextTodos = [...this.state.todos];
+
+      nextTodos.splice(todoIndex, 1);
+
+      await request(`/${this.state.selectedUsername}/${id}`, {
+        method: "DELETE",
+      });
+      await fetchTodos();
+    },
   });
 
   this.setState = (nextState) => {
     this.state = nextState;
+
+    header.setState({
+      isLoading: this.state.isLoading,
+      selectedUsername: this.state.selectedUsername,
+    });
+
     userList.setState(this.state.userList);
+
     todoList.setState({
       isLoading: this.state.isLoading,
       todos: this.state.todos,
     });
+
     this.render();
   };
 
