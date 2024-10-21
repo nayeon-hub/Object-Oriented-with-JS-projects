@@ -17,7 +17,6 @@ export default function TodoList({
 
   this.render = () => {
     const { isLoading, todos } = this.state;
-    console.log(todos);
 
     if (!isLoading && todos.length === 0) {
       $todo.innerHTML = "Todo가 없습니다";
